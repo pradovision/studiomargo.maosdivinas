@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Margô Mãos Divinas | Studio de Beleza de Luxo em Cascavel</title>
+    <meta name="description" content="Studio de beleza especializado em unhas de gel, fibra e design de olhar em Cascavel/PR. Estilo, sofisticação e cuidado em ambiente exclusivo.">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#111111',
+                        'dark-card': '#1A1A1A',
+                        'gold-vibrant': '#E3C567',
+                        'text-light': '#F5F5F5',
+                    },
+                    fontFamily: {
+                        'sans': ['Montserrat', 'sans-serif'],
+                        'serif': ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #111111; color: #F5F5F5; }
+        .glass-nav { background: rgba(17, 17, 17, 0.9); backdrop-filter: blur(12px); }
+        /* Ajuste para garantir que o AOS não quebre o layout dark */
+        [data-aos] { pointer-events: none; }
+        [data-aos].aos-animate { pointer-events: auto; }
+    </style>
+</head>
+<body>
+
+    <header class="fixed w-full z-50 glass-nav border-b border-gray-800">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-3xl font-bold tracking-widest text-gold-vibrant uppercase font-serif">Margô</div>
+            <ul class="hidden md:flex space-x-8 text-sm font-semibold uppercase tracking-wider text-text-light">
+                <li><a href="#inicio" class="hover:text-gold-vibrant transition">Início</a></li>
+                <li><a href="#servicos" class="hover:text-gold-vibrant transition">Serviços</a></li>
+                <li><a href="#sobre" class="hover:text-gold-vibrant transition">O Studio</a></li>
+                <li><a href="https://wa.me/5545999999999" class="bg-gold-vibrant text-black px-6 py-2 rounded-full hover:bg-white transition">Agendar Momento</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="inicio" class="relative h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat" style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(17,17,17,1)), url('https://images.unsplash.com/photo-1522337380264-c4e99a54a107?auto=format&fit=crop&q=80&w=2070');">
+        <div class="text-center text-text-light px-4 z-10" data-aos="fade-up">
+            <span class="text-gold-vibrant uppercase tracking-widest font-semibold text-sm mb-4 block">Cascavel / PR</span>
+            <h1 class="text-6xl md:text-8xl mb-6 font-serif leading-tight">Toque<br><span class="italic">Divino</span></h1>
+            <p class="text-xl md:text-2xl mb-12 font-light max-w-2xl mx-auto">Sua beleza elevada ao mais alto nível de sofisticação e cuidado.</p>
+            <a href="#servicos" class="border-2 border-gold-vibrant text-gold-vibrant px-12 py-4 rounded-full text-lg font-semibold hover:bg-gold-vibrant hover:text-black transition inline-block">
+                Descubra nossos serviços
+            </a>
+        </div>
+    </section>
+
+    <section id="servicos" class="py-24 container mx-auto px-6">
+        <div class="text-center mb-16" data-aos="fade-up">
+            <h2 class="text-5xl mb-4 font-serif text-text-light">Exclusividade em cada detalhe</h2>
+            <div class="w-24 h-px bg-gold-vibrant mx-auto"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-dark-card p-10 rounded-3xl border border-gray-800 shadow-2xl hover:border-gold-vibrant transition-all duration-300 group" data-aos="fade-up" data-aos-delay="100">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center mb-8 border border-gray-700 group-hover:bg-gold-vibrant transition">
+                    <i class="fa-solid fa-gem text-2xl text-gold-vibrant group-hover:text-black"></i>
+                </div>
+                <h3 class="text-3xl mb-5 font-serif text-text-light">Unhas de Fibra</h3>
+                <p class="text-gray-400 mb-8 leading-relaxed">A resistência e a naturalidade que você busca, com acabamento impecável.</p>
+                <div class="flex justify-between items-center border-t border-gray-800 pt-6">
+                    <span class="text-gold-vibrant font-semibold text-lg">Premium</span>
+                    <i class="fa-solid fa-arrow-right text-gray-600 group-hover:text-gold-vibrant"></i>
+                </div>
+            </div>
+
+            <div class="bg-dark-card p-10 rounded-3xl border border-gray-800 shadow-2xl hover:border-gold-vibrant transition-all duration-300 group" data-aos="fade-up" data-aos-delay="200">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center mb-8 border border-gray-700 group-hover:bg-gold-vibrant transition">
+                    <i class="fa-solid fa-eye text-2xl text-gold-vibrant group-hover:text-black"></i>
+                </div>
+                <h3 class="text-3xl mb-5 font-serif text-text-light">Cílios & Olhar</h3>
+                <p class="text-gray-400 mb-8 leading-relaxed">Extensões e design que valorizam sua expressão natural com elegância.</p>
+                <div class="flex justify-between items-center border-t border-gray-800 pt-6">
+                    <span class="text-gold-vibrant font-semibold text-lg">Personalizado</span>
+                    <i class="fa-solid fa-arrow-right text-gray-600 group-hover:text-gold-vibrant"></i>
+                </div>
+            </div>
+
+            <div class="bg-dark-card p-10 rounded-3xl border border-gray-800 shadow-2xl hover:border-gold-vibrant transition-all duration-300 group" data-aos="fade-up" data-aos-delay="300">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center mb-8 border border-gray-700 group-hover:bg-gold-vibrant transition">
+                    <i class="fa-solid fa-sparkles text-2xl text-gold-vibrant group-hover:text-black"></i>
+                </div>
+                <h3 class="text-3xl mb-5 font-serif text-text-light">Estética Facial</h3>
+                <p class="text-gray-400 mb-8 leading-relaxed">Procedimentos modernos para revitalizar e cuidar da sua pele.</p>
+                <div class="flex justify-between items-center border-t border-gray-800 pt-6">
+                    <span class="text-gold-vibrant font-semibold text-lg">Renovação</span>
+                    <i class="fa-solid fa-arrow-right text-gray-600 group-hover:text-gold-vibrant"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="sobre" class="py-24 bg-dark-card border-t border-b border-gray-800">
+        <div class="container mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
+            <div class="w-full md:w-1/2 relative" data-aos="fade-right">
+                <div class="absolute -bottom-6 -right-6 w-full h-full border-2 border-gold-vibrant rounded-2xl z-0"></div>
+                <img src="https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&q=80&w=1000" class="rounded-2xl shadow-2xl relative z-10" alt="Ambiente de Luxo">
+            </div>
+            <div class="w-full md:w-1/2" data-aos="fade-left">
+                <h2 class="text-5xl mb-8 font-serif leading-tight text-text-light">Onde a perfeição se torna um padrão</h2>
+                <p class="text-gray-400 leading-relaxed mb-8 text-lg font-light">
+                    No Studio Margô Mãos Divinas, o luxo não está apenas na estética, mas no atendimento personalizado e na biossegurança rigorosa. Cada cliente é única, e cada procedimento é um compromisso com a excelência e a autoestima.
+                </p>
+                <div class="flex flex-wrap gap-4 text-sm uppercase tracking-widest text-gold-vibrant">
+                    <span class="bg-dark-bg px-5 py-2 rounded-full border border-gray-800">Produtos Premium</span>
+                    <span class="bg-dark-bg px-5 py-2 rounded-full border border-gray-800">Atendimento VIP</span>
+                    <span class="bg-dark-bg px-5 py-2 rounded-full border border-gray-800">Tecnologia</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer id="contato" class="bg-dark-bg text-text-light py-20">
+        <div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 text-center md:text-left">
+            <div class="md:col-span-1">
+                <div class="text-4xl font-bold tracking-widest text-gold-vibrant uppercase font-serif mb-4">Margô</div>
+                <p class="text-gray-500 text-sm">Elevando a beleza em Cascavel.</p>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-6 text-text-light uppercase tracking-wider">Contato</h3>
+                <p class="text-gray-400 text-sm mb-2"><i class="fa-solid fa-phone text-gold-vibrant mr-2"></i> (45) 99999-9999</p>
+                <p class="text-gray-400 text-sm"><i class="fa-solid fa-envelope text-gold-vibrant mr-2"></i> contato@margo.com.br</p>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-6 text-text-light uppercase tracking-wider">Onde Estamos</h3>
+                <p class="text-gray-400 text-sm">Centro - Cascavel / PR<br><span class="text-gray-600">Agende para receber o endereço.</span></p>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-6 text-text-light uppercase tracking-wider">Siga-nos</h3>
+                <a href="https://www.instagram.com/margo_maosdivinas" target="_blank" class="text-3xl hover:text-gold-vibrant transition"><i class="fa-brands fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="border-t border-gray-800 mt-16 pt-8 text-center text-gray-600 text-xs">
+            &copy; 2026 Margô Mãos Divinas. Todos os direitos reservados.
+        </div>
+    </footer>
+
+    <a href="https://wa.me/5545999999999" target="_blank" class="fixed bottom-6 right-6 bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg hover:scale-110 transition z-50">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({ duration: 1000, once: true, offset: 100 });
+    </script>
+</body>
+</html>
