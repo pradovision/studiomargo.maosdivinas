@@ -42,3 +42,28 @@ Atualização: 06/11/2026. Branch de homologação: `feature/prado-vision-614`.
 **Não** enviar planilhas com PII, arquivos `salonsoft-input.json`, dados reais, senhas ou backups ao GitHub público.
 **Não** executar mutações de teste na produção.
 A homologação e a produção são serviços separados dentro do mesmo projeto Railway; selecionar sempre o ID correto.
+
+
+## Revisão de segurança e testes — 06/11/2026
+- Nova agenda por profissional publicada no ambiente de homologação, commit `14264d9` (versão de leitura, sem comandos de alteração).
+- Volume persistente próprio da homologação `margo-homologacao-data` montado em `/app/homologacao-data`; não remover ou compartilhar com `/data`.
+- Importador protegido na homologação: commit `81ba718`; em produção, recusa `/api/admin/migracao/aplicar` se não houver `PRADO_MIGRATION_EXTERNAL_BACKUP_VERIFIED_AT` com data válida nas últimas 24 horas.
+- A presença da variável é **somente um registro operacional** de que um administrador validou um backup externo; ela não substitui evidência nem testa a restauração automaticamente.
+- O backup interno anterior à importação agora é lido e conferido quanto aos blocos obrigatórios e quantidades **antes da primeira gravação**.
+- O importador continua restrito ao usuário master e ao CSRF já existente.
+- Validados localmente: 10 testes unitários, 12 verificações de integração e 2 testes de barreira de produção/consulta de prévia, todos aprovados.
+- O build da homologação agora executa `node --test /app/prado-migration/tests/safety.test.js` como etapa obrigatória.
+- Não foi possível consultar nem restaurar o backup **real** de produção pelos conectores disponíveis.
+- Não foram executados testes E2E autenticados na instância pública da Railway.
+- Nenhuma migração foi executada em `margo-beauty-studio`, que permanece ligado à branch `production-v6.12`.
+
+### Critérios objetivos de promoção para produção
+1. Exportar backup da produção **fora do mesmo volume**, com armazenamento seguro e, se aplicável, arquivo de chave criptográfica separado.
+2. Restaurar a cópia em um ambiente isolado, verificar integridade, contagens, agendamentos, usuários, finanças, imagens e acessos; documentar a evidência.
+3. Testar a importação e a fila de divergências em homologação com sessão master autorizada, sem misturar dados de testes com dados reais.
+4. Confirmar contagens e cadastros preexistentes, serviço oculto e produto inativo, idempotência e ausência de lançamentos financeiros indevidos.
+5. Promover o código validado (não um ZIP antigo), obter aprovação da proprietária para a janela de migração e conferir o rollback.
+6. Somente depois da restauração testada e com a janela aprovada, registrar `PRADO_MIGRATION_EXTERNAL_BACKUP_VERIFIED_AT` em produção (ISO 8601 em UTC) e realizar a importação autenticada pelo painel.
+7. Conferir logs, disponibilidade, cadastros, agendamentos, anexos, registros financeiros e dashboard; entregar as pendências para revisão assistida.
+
+**Nota:** os pacotes e saldos por cliente não foram fornecidos de modo identificável nos arquivos SalonSoft e não podem ser criados por suposição.
