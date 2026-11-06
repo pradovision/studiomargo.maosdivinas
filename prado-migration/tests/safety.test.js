@@ -91,3 +91,11 @@ test('correcao de cliente em producao requer comprovante externo antes de consul
   if(stamp===undefined)delete process.env.PRADO_MIGRATION_EXTERNAL_BACKUP_VERIFIED_AT;else process.env.PRADO_MIGRATION_EXTERNAL_BACKUP_VERIFIED_AT=stamp;
   fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('pacotes de origem sao apenas resumo, nunca importados como sessoes',()=>{
+ const {prepare}=require('../migration-core.js');
+ const data={format:'prado-vision-salonsoft-v1',collections:{clients:[],services:[],professionals:[],products:[],packages:[{Nome:'Pacote de teste',Total:9,_sourceFile:'Pacotes ativos.xlsx',_row:2}]}};
+ const one=prepare(data,{clients:[],settings:{services:[],professionals:[]},products:[]});
+ assert.equal(one.sourceCounts.packages,1);assert.equal(one.importCounts.packages,0);
+ assert.equal(one.imported.packages.length,1);assert(one.issues.some(i=>i.type==='pacotes'));
+});
