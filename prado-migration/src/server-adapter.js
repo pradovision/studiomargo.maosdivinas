@@ -61,6 +61,55 @@ function makeRoutes(ctx){
     return sendJson(res,200,{ok:true,imported:plan.importCounts,reviewPending:issues.filter(i=>i.status==='pendente').length,backupCreated:true});
    }catch(e){return sendJson(res,400,{error:e.message});}
   }
+  // Revisao assistida: recupera um cliente que ficou de fora devido a nome/telefone.
+  // Nao altera cadastros preexistentes nem saldos financeiros.
+  const fix=name.match(/^revisoes\/([a-zA-Z0-9-]+)\/corrigir-cliente$/);
+  if(req.method==='POST'&&fix){
+   const live=process.env.PRADO_MIGRATION_ENV==='production'||path.resolve(DATA_DIR)==='/data';
+   if(live){
+    const verifiedAt=Date.parse(process.env.PRADO_MIGRATION_EXTERNAL_BACKUP_VERIFIED_AT||'');
+    if(!Number.isFinite(verifiedAt)||verifiedAt>Date.now()||Date.now()-verifiedAt>=86400000)
+     return sendJson(res,409,{error:'Correcao bloqueada: backup externo recente e restauracao testada nao foram registrados.'});
+   }
+   try{
+    const state=read(file,{issues:[]}),issue=(state.issues||[]).find(x=>x.id===fix[1]);
+    if(!issue)return sendJson(res,404,{error:'Pendencia nao encontrada.'});
+    if(issue.type!=='clientes'||!['Nome ausente','Telefone ausente ou inválido','Telefone repetido no SalonSoft'].includes(issue.reason))
+     return sendJson(res,409,{error:'Esta pendencia nao permite cadastro assistido. Corrija no modulo correspondente.'});
+    if(issue.status!=='pendente')return sendJson(res,409,{error:'Pendencia ja revisada ou ignorada.'});
+    const body=await readJson(req);
+    if(body.confirmacao!=='CRIAR CLIENTE')return sendJson(res,400,{error:'Confirmacao obrigatoria.'});
+    const corrected={...issue.record,Nome:clean(body.name).slice(0,120),Celular:clean(body.phone)};
+    const existing={clients:readClients(),settings:readSettings(),products:readProducts()};
+    const plan=prepare({format:'prado-vision-salonsoft-v1',files:{},collections:{clients:[corrected],services:[],professionals:[],products:[],packages:[]}},existing);
+    if(plan.imported.clients.length!==1)
+     return sendJson(res,409,{error:'Nao foi possivel criar o cadastro: nome, telefone ou duplicidade precisa de revisao.'});
+    const client=plan.imported.clients[0];
+    if(existing.clients.some(c=>c.id===client.id))return sendJson(res,409,{error:'Cadastro de origem ja importado.'});
+    const backup=createBackupSnapshot('antes-corrigir-cliente-salonsoft');
+    if(!backup||!fs.existsSync(backup))return sendJson(res,500,{error:'Correcao bloqueada: backup local indisponivel.'});
+    let original;
+    try{
+     original=JSON.parse(fs.readFileSync(backup,'utf8'));
+     if(!Array.isArray(original.clients)||original.clients.length!==existing.clients.length)
+      throw Error('BACKUP_INCONSISTENTE');
+    }catch{return sendJson(res,500,{error:'Correcao bloqueada: backup local inconsistente.'});}
+    try{
+     writeClients([...existing.clients,client]);
+     issue.status='revisado';
+     issue.notes=clean(body.notes)||'Cliente cadastrado apos conferencia de nome e telefone.';
+     issue.reviewedAt=new Date().toISOString();
+     issue.reviewedBy=String(authUser?.username||authUser?.name||'master').slice(0,80);
+     issue.targetId=client.id;
+     state.importCounts={...(state.importCounts||{}),clients:(Number(state.importCounts?.clients)||0)+1};
+     write(file,state);
+    }catch(e){
+     try{writeClients(original.clients);}catch(error){console.error('[migracao] Restauracao de cliente falhou',error.message);}
+     return sendJson(res,500,{error:'Falha ao salvar a correcao; backup local preservado.'});
+    }
+    return sendJson(res,201,{ok:true,client:{id:client.id,name:client.name,phone:client.phone},issueId:issue.id});
+   }catch(e){return sendJson(res,400,{error:e.message});}
+  }
   const match=name.match(/^revisoes\/([a-zA-Z0-9-]+)$/);
   if(req.method==='PATCH'&&match){
    try{const body=await readJson(req),status=clean(body.status);if(!['pendente','revisado','ignorado'].includes(status))return sendJson(res,400,{error:'Status inválido.'});
