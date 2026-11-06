@@ -55,6 +55,8 @@ function makeRoutes(ctx){
     const totals=oldReview.migrationId===plan.migrationId
       ?Object.fromEntries(Object.keys(plan.importCounts).map(k=>[k,(Number(oldReview.importCounts?.[k])||0)+plan.importCounts[k]]))
       :plan.importCounts;
+    // Nenhum pacote de sessoes e importado: somente o resumo de origem e guardado para revisao.
+    totals.packages=0;
     const state={migrationId:plan.migrationId,sourceCounts:plan.sourceCounts,importCounts:totals,updatedAt:new Date().toISOString(),issues,packageSummaries:oldReview.packageSummaries?.length?oldReview.packageSummaries:plan.imported.packages};
     try{if(plan.imported.clients.length)writeClients(afterClients);if(plan.imported.services.length||plan.imported.professionals.length)writeSettings(afterSettings);if(plan.imported.products.length)writeProducts(afterProducts);write(file,state);}
     catch(e){const snap=read(backup,null);if(snap){try{writeClients(snap.clients);writeSettings(snap.settings);writeProducts(snap.products);}catch(restoreError){console.error('[migracao] Falha na restauração',restoreError.message);}}return sendJson(res,500,{error:'Falha na importação; backup preservado. Verifique os registros.'});}
