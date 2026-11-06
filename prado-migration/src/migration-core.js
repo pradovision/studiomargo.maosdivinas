@@ -56,6 +56,8 @@ function prepare(input,existing={}){
  }
  for(const r of source.packages||[]){imported.packages.push({...r});warn('pacotes','Pacote sem identificação de clientes',r,'Arquivo contém somente resumo. Não criar saldo de sessões sem identificação dos clientes e quantidades.','alta');}
  const summary=Object.fromEntries(Object.entries(imported).map(([k,v])=>[k,v.length]));
+ // O arquivo de pacotes e apenas um resumo sem vinculo com clientes: nao foi importado nenhum pacote utilizavel.
+ summary.packages=0;
  const types={};for(const i of issues)types[i.reason]=(types[i.reason]||0)+1;
  return {migrationId:hash(Object.values(input.files||{}).map(v=>v.sha256).join('|')),preparedAt:stamp,sourceCounts:countRows(input),importCounts:summary,attentionCount:issues.length,attentionByReason:types,imported,issues};
 }
