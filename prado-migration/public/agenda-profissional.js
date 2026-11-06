@@ -1,0 +1,29 @@
+'use strict';
+const $=id=>document.getElementById(id), mk=(tag,className,text)=>{const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=String(text);return el};
+let settings={},bookings=[],blocks=[],user=null;
+const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+const dt=s=>{const [y,m,d]=String(s).split('-').map(Number);return new Date(y,m-1,d,12)};
+const plus=(v,n)=>{const d=dt(v);d.setDate(d.getDate()+n);return iso(d)};
+const mins=s=>{const m=String(s||'').match(/^(\d\d):(\d\d)$/);return m?Number(m[1])*60+Number(m[2]):NaN};
+const hm=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+const label=s=>({pendente:'Pendente',confirmado:'Confirmado',em_atendimento:'Em atendimento',concluido:'Concluído',cancelado:'Cancelado',faltou:'Faltou'})[s]||s||'Não informado';
+const show=(message)=>{$('notice').textContent=message;$('notice').hidden=false};
+async function api(url){const response=await fetch(url,{cache:'no-store',credentials:'same-origin'});if(response.status===401)throw Error('Entre no painel administrativo antes de abrir esta agenda.');if(!response.ok)throw Error('Falha ao consultar '+url+' (HTTP '+response.status+').');return response.json()}
+function entriesFor(b){const items=Array.isArray(b.items)&&b.items.length?b.items:[{professionalId:b.professionalId,serviceName:b.serviceName,offsetMinutes:0,duration:b.duration}];return items.map((it,index)=>({booking:b,professionalId:it.professionalId||b.professionalId,time:hm((mins(b.time)||0)+(Number(it.offsetMinutes)||0)),duration:Number(it.duration)||Number(b.duration)||60,serviceName:it.serviceName||b.serviceName||'Serviço',key:b.id+'-'+index}))}
+function render(){
+ const date=$('date').value,filter=$('professional').value,status=$('status').value;
+ const all=bookings.flatMap(entriesFor),visible=all.filter(v=>(!filter||v.professionalId===filter)&&(status==='todos'||(status==='ativos'?!['cancelado','faltou'].includes(v.booking.status):v.booking.status===status)));
+ const pros=(settings.professionals||[]).filter(p=>(!filter||p.id===filter)&&(p.active!==false||visible.some(v=>v.professionalId===p.id)));
+ const columns=pros.length?pros:[{id:'__sem_profissionais__',name:'Sem profissional cadastrada'}];
+ const grid=$('agendaGrid');grid.style.setProperty('--pros',columns.length);grid.replaceChildren();
+ grid.append(mk('div','time-head','HORÁRIO'));for(const pro of columns){const head=mk('div','pro-head',pro.name);head.append(mk('small','',pro.active===false?'Inativa':'Agenda do dia'));grid.append(head)}
+ const minAvail=Math.min(8*60,...visible.map(v=>mins(v.time)).filter(Number.isFinite),...blocks.map(b=>mins(b.start)).filter(Number.isFinite));
+ const maxAvail=Math.max(20*60,...visible.map(v=>mins(v.time)+v.duration).filter(Number.isFinite),...blocks.map(b=>mins(b.end)).filter(Number.isFinite));
+ const start=Math.floor(Math.max(0,minAvail)/30)*30, end=Math.ceil(Math.min(24*60,maxAvail)/30)*30;
+ for(let t=start;t<=end;t+=30){grid.append(mk('div','time-cell',hm(t)));for(const pro of columns){const slot=mk('div','slot');for(const v of visible.filter(v=>v.professionalId===pro.id&&mins(v.time)>=t&&mins(v.time)<t+30)){const card=mk('div','card');card.dataset.status=v.booking.status;card.append(mk('span','time',v.time+' · '+v.duration+' min'),mk('strong','',v.booking.name||'Cliente não informada'),mk('span','',v.serviceName),mk('span','meta',label(v.booking.status)));slot.append(card)}for(const b of blocks.filter(b=>(b.professionalId==='all'||b.professionalId===pro.id)&&mins(b.start)<=t&&mins(b.end)>t)){slot.append(mk('div','block','Bloqueio · '+(b.reason||'Indisponível')))}grid.append(slot)}}
+ const ids=new Set(visible.map(x=>x.booking.id));$('count').textContent=ids.size;$('pending').textContent=new Set(visible.filter(v=>v.booking.status==='pendente').map(v=>v.booking.id)).size;$('confirmed').textContent=new Set(visible.filter(v=>v.booking.status==='confirmado').map(v=>v.booking.id)).size;$('blocked').textContent=blocks.filter(b=>!filter||b.professionalId===filter||b.professionalId==='all').length;
+ if(!visible.length&&!blocks.length)show('Nenhum atendimento ou bloqueio para os filtros selecionados.');else $('notice').hidden=true;
+}
+async function refresh(){const date=$('date').value;if(!/^\d{4}-\d\d-\d\d$/.test(date))return;const btn=$('refresh');btn.disabled=true;document.body.classList.add('busy');try{const results=await Promise.all([api('/api/admin/bookings?start='+date+'&end='+date),api('/api/admin/blocks?start='+date+'&end='+date)]);bookings=results[0].bookings||[];blocks=results[1].blocks||[];render()}catch(e){show(e.message)}finally{btn.disabled=false;document.body.classList.remove('busy')}}
+async function start(){try{const check=await api('/api/admin/check');if(!check.ok||!check.user)throw Error('Acesse /admin e entre na sua conta.');user=check.user;settings=await api('/api/admin/settings');$('reviewLink').hidden=user.role!=='master';const select=$('professional');for(const p of settings.professionals||[]){const option=mk('option','',p.name);option.value=p.id;select.append(option)}$('date').value=iso(new Date());await refresh()}catch(e){show(e.message)}}
+$('prev').addEventListener('click',()=>{$('date').value=plus($('date').value,-1);refresh()});$('next').addEventListener('click',()=>{$('date').value=plus($('date').value,1);refresh()});$('today').addEventListener('click',()=>{$('date').value=iso(new Date());refresh()});$('date').addEventListener('change',refresh);$('professional').addEventListener('change',render);$('status').addEventListener('change',render);$('refresh').addEventListener('click',refresh);start();
