@@ -84,3 +84,20 @@ A homologação e a produção são serviços separados dentro do mesmo projeto 
 
 ### Unica etapa operacional atualmente bloqueada
 Uma sessao autorizada com acesso ao ambiente de producao deve acionar e guardar um backup externo, baixar a chave criptografica se o backup exigir uma, restaurar uma copia em teste isolado e fornecer um registro de que a restauracao foi concluida. Nao enviar senhas, chaves ou base de clientes ao repositorio.
+
+
+## Auditoria de backups — 06/11/2026, atualização final
+- Foi preservada uma referência imutável de **código** no branch `backup/producao-pre-migracao-salonsoft-2026-11-06`, baseada no commit ativo de produção `b7ce37c`. Esse procedimento não copia o volume `/data`.
+- A Railway mantém dois serviços saudáveis, com volumes distintos: produção `margo-data` em `/data`, homologação `margo-homologacao-data` em `/app/homologacao-data`.
+- No monitoramento das últimas 24 horas no momento da auditoria: 119 respostas HTTP 2xx, 162 respostas 4xx e nenhuma 5xx na produção (4xx podem incluir requisições indevidas).
+- Validação local independente do kit Monitor + AI: quatro testes aprovados, incluindo integridade e alteração de backup.
+- CI de homologação atualizado: build `51d4c1d` executou **15 verificações automatizadas aprovadas, zero falha**, incluindo:
+  - Criação de backup criptografado sobre dados fictícios;
+  - Restauração dos registros e de upload fictício em outro diretório;
+  - Rejeição de backup modificado e de chave incorreta;
+  - Inicialização e testes HTTP do sistema isolado, login sintético, proteção de rotas e prévia sem gravação.
+- **Não foi gerado nem validado um backup nativo do volume real de produção nesta sessão.** A conexão Railway atual não oferece ação de listar/criar backups de volume ou baixar conteúdo do volume `/data`.
+- O backup nativo da Railway pode ser criado/agendado em `margo-beauty-studio > Backups`. Recomenda-se cópia manual imediata e agenda diária; snapshots nativos só podem ser restaurados no mesmo projeto/ambiente.
+- Antes de executar migração real: comprovar pelo menos um snapshot nativo e uma exportação completa da aplicação, armazenar externamente e testar recuperação em local isolado, incluindo arquivos de imagem, dados financeiros, usuários e chave de descriptografia.
+- Nenhum backup real, credencial, dado de cliente ou variável secreta foi salvo neste repositório.
+- Status da promoção de produção: **BLOQUEADA** até confirmação das evidências de backup/restauração real.
