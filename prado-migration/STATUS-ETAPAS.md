@@ -67,3 +67,5 @@ A homologação e a produção são serviços separados dentro do mesmo projeto 
 7. Conferir logs, disponibilidade, cadastros, agendamentos, anexos, registros financeiros e dashboard; entregar as pendências para revisão assistida.
 
 **Nota:** os pacotes e saldos por cliente não foram fornecidos de modo identificável nos arquivos SalonSoft e não podem ser criados por suposição.
+
+- Ensaio de restauração local aprovado em 06/11/2026: nove arquivos JSON operacionais restaurados de uma cópia anterior à importação; preservação de um cadastro fictício preexistente confirmada. **Não** equivale a testar os dados reais, uploads e material do painel técnico.
