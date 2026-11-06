@@ -25,10 +25,28 @@ function makeRoutes(ctx){
   }
   if(req.method==='POST'&&name==='aplicar'){
    try{
+    // A importacao definitiva so pode ocorrer apos comprovacao de backup externo recente.
+    // A homologacao permanece liberada para testes com dados isolados.
+    const isLive = process.env.PRADO_MIGRATION_ENV==='production' || path.resolve(DATA_DIR)==='/data';
+    if(isLive){
+      const verifiedAt=Date.parse(process.env.PRADO_MIGRATION_EXTERNAL_BACKUP_VERIFIED_AT||'');
+      const recent=Number.isFinite(verifiedAt)&&verifiedAt<=Date.now()&&Date.now()-verifiedAt<24*60*60*1000;
+      if(!recent)return sendJson(res,409,{error:'Importacao definitiva bloqueada: falta registrar um backup externo verificavel, com restauracao testada nas ultimas 24 horas.'});
+    }
     const body=await readJson(req); req._auditPayload={fonte:"salonsoft",tipo:"importacao"}; if(body.confirmacao!=='CONFIRMAR IMPORTACAO')return sendJson(res,400,{error:'Confirmação de importação ausente.'});
     const data=body.dados,existing={clients:readClients(),settings:readSettings(),products:readProducts()};
     const plan=prepare(data,existing),backup=createBackupSnapshot('antes-migrar-salonsoft');
     if(!backup||!fs.existsSync(backup))return sendJson(res,500,{error:'Importação bloqueada: backup não foi concluído.'});
+    // Verifica a legibilidade e as quantidades do backup antes de alterar cadastros.
+    try{
+      const snap=JSON.parse(fs.readFileSync(backup,'utf8'));
+      if(!snap||!Array.isArray(snap.clients)||!Array.isArray(snap.products)||!snap.settings||
+        snap.clients.length!==existing.clients.length||snap.products.length!==existing.products.length||
+        !Array.isArray(snap.settings.services)||!Array.isArray(snap.settings.professionals)||
+        snap.settings.services.length!==(existing.settings.services||[]).length||
+        snap.settings.professionals.length!==(existing.settings.professionals||[]).length)
+        throw Error('Backup incompleto ou inconsistente.');
+    }catch(e){return sendJson(res,500,{error:'Importacao bloqueada: backup local nao passou pela verificacao de consistencia.'});}
     const afterClients=[...existing.clients,...plan.imported.clients];
     const afterSettings={...existing.settings,services:[...(existing.settings.services||[]),...plan.imported.services],professionals:[...(existing.settings.professionals||[]),...plan.imported.professionals]};
     const afterProducts=[...existing.products,...plan.imported.products];
