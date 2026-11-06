@@ -69,3 +69,18 @@ A homologação e a produção são serviços separados dentro do mesmo projeto 
 **Nota:** os pacotes e saldos por cliente não foram fornecidos de modo identificável nos arquivos SalonSoft e não podem ser criados por suposição.
 
 - Ensaio de restauração local aprovado em 06/11/2026: nove arquivos JSON operacionais restaurados de uma cópia anterior à importação; preservação de um cadastro fictício preexistente confirmada. **Não** equivale a testar os dados reais, uploads e material do painel técnico.
+
+
+## Complemento de homologacao — 06/11/2026 (entrega assistida)
+- Correcao assistida no painel de revisao: `Corrigir e cadastrar` recupera cliente inicialmente omitido por nome ou telefone, exigindo verificacao de titularidade, evitando telefone duplicado e salvando backup local antes da alteracao.
+- A correcao nao mescla cadastros existentes e nao cria valores financeiros. Casos de saldo permanecem sujeitos a revisao independente.
+- Pacotes do SalonSoft sao **resumos sem vinculo com clientes**, portanto a quantidade de pacotes efetivamente importados e `0`, embora exista um resumo para revisao.
+- Importacao idempotente: em base isolada, os 1.806 cadastros aptos entram uma vez; nova execucao nao recria clientes, profissionais, servicos nem produtos.
+- Rotina CI de homologacao agora inclui `safety.test.js` (6 testes) e `smoke.test.js` (teste de inicializacao/HTTP com subtestes autenticados), total de **12 verificacoes** aprovadas no build Railway do commit `714adaa`.
+- O smoke testa site, painel, bloqueio de acesso anonimo, login master sintetico, configuracoes, agenda e previa sem escrita na base de teste.
+- A prova de backup externo **nao** pode ser inferida da variavel `PRADO_MIGRATION_EXTERNAL_BACKUP_VERIFIED_AT`; e necessario validar uma copia recuperavel, com teste de restauracao e evidencia independente.
+- A Railway oferece snapshots nativos no menu `Service > Backups` com agendamento diario, semanal ou mensal, mas os snapshots do volume so podem ser restaurados no mesmo projeto e ambiente. Para validar uma restauracao isolada e preciso, adicionalmente, um export de dados/backup da aplicacao para armazenamento separado.
+- **Producao permanece inalterada.** Nao publicar ou executar migracao sem a prova de backup restauravel, validacao autenticada e janela aprovada.
+
+### Unica etapa operacional atualmente bloqueada
+Uma sessao autorizada com acesso ao ambiente de producao deve acionar e guardar um backup externo, baixar a chave criptografica se o backup exigir uma, restaurar uma copia em teste isolado e fornecer um registro de que a restauracao foi concluida. Nao enviar senhas, chaves ou base de clientes ao repositorio.
