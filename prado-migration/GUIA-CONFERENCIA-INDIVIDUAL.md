@@ -46,7 +46,7 @@ Login: acesso administrativo master com senha legítima do ambiente. Não fornec
 ## Evidência de homologação
 - Commit de deploy: `09ff94f4bb93f65951658c6f90a6dfec80e86166`.
 - Railway: **SUCCESS** em 16/11/2026.
-- Build: **20 verificações automatizadas**, nenhuma falha. Testes abrangem preparação sem cadastro, aprovação de uma pessoa, descarte, correção, vínculo com cliente existente, bloqueio de duplicidades, prevenção de importação sem backup em produção, smoke HTTP e restauração criptografada em dados fictícios.
+- Build: **21 verificações automatizadas**, nenhuma falha. Testes abrangem preparação sem cadastro, aprovação de uma pessoa, descarte, correção, vínculo com cliente existente, bloqueio de duplicidades, prevenção de importação sem backup em produção, smoke HTTP e restauração criptografada em dados fictícios.
 
 ## O que ainda está PENDENTE
 - **Importação dos dados reais:** o JSON confidencial ainda não foi carregado na Railway. Não transmitir dados pessoais pelo GitHub ou variáveis de ambiente.
@@ -57,3 +57,5 @@ Login: acesso administrativo master com senha legítima do ambiente. Não fornec
 
 ## Privacidade
 O arquivo de upload contém dados pessoais. Armazená-lo somente em lugar privado e compartilhar apenas com pessoa autorizada. Não colocar nomes, telefones e saldos em tickets públicos, logs ou GitHub.
+
+- Teste com 2.478 registros sinteticos: todos mantidos pendentes e nenhum cadastrado; endpoint legado de importacao automatica retorna HTTP 410.
