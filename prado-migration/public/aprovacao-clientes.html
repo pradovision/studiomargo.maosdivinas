@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conferência de clientes | Margo Estilo Fashion</title>
+<link rel="stylesheet" href="/aprovacao-clientes.css"></head><body>
+<main class="shell">
+<header><div><p class="eyebrow">MARGO ESTILO FASHION · MIGRAÇÃO ASSISTIDA</p><h1>Conferência de clientes</h1><p class="muted">Antes de cadastrar, confirme quem realmente é cliente do Studio.</p></div><a class="back" href="/admin">Voltar ao painel</a></header>
+<section class="notice" id="notice" role="alert" hidden></section>
+<section class="metrics" id="metrics" aria-label="Andamento da conferência"></section>
+<section class="card" id="startSection"><h2>Etapa 1 · Preparar a lista de contatos</h2>
+<p>Selecione o <strong>arquivo JSON preparado pela Prado Vision</strong>. Todos os contatos ficarão em revisão, inclusive os que já têm nome e telefone. Esta etapa <strong>não cadastra ninguém</strong> e não altera o financeiro.</p>
+<input type="file" id="file" accept=".json,application/json">
+<div class="actions"><button id="preview" class="secondary" disabled>Conferir arquivo</button><button id="prepare" disabled>Preparar lista de conferência</button></div>
+<p id="fileMessage" class="muted" aria-live="polite"></p>
+</section>
+<section class="card"><div class="section-heading"><div><h2>Etapa 2 · Aprovar ou descartar, uma pessoa por vez</h2><p class="muted">Somente <strong>Aprovar e cadastrar</strong> cria uma cliente. Descartar mantém a decisão registrada sem incluir a pessoa na base.</p></div></div>
+<div class="filters"><label>Localizar cliente<input type="search" id="search" placeholder="Nome, telefone ou linha de origem"></label><label>Situação<select id="status"><option value="pendente">Ainda não conferidas</option><option value="aprovado">Aprovadas</option><option value="descartado">Descartadas</option><option value="vinculado">Vinculadas a cadastro existente</option><option value="todos">Todas</option></select></label><button id="find" class="secondary">Pesquisar</button></div>
+<div class="list" id="clients" aria-live="polite"><p class="muted">Faça login administrativo para carregar a lista.</p></div>
+<div class="pagination"><button id="previous" class="secondary">Anterior</button><span id="pageInfo">Página —</span><button id="next" class="secondary">Próxima</button></div>
+</section>
+<section class="card" id="auxSection"><h2>Etapa 3 · Outros cadastros</h2>
+<p>Serviços, produtos e profissionais podem ser preparados separadamente. Os serviços ficam ocultos para agendamento, os produtos com estoque zero e inativos, e os profissionais inativos até revisão.</p>
+<p><strong>Histórico antigo:</strong> os cinco arquivos do SalonSoft não possuem atendimentos, agendamentos ou pagamentos por cliente. O histórico que já existir no Margo será preservado, mas não haverá histórico antigo criado sem dados de origem.</p>
+<div class="actions"><button id="modules" class="secondary" disabled>Aplicar serviços, produtos e profissionais</button><span id="moduleStatus" class="muted"></span></div>
+</section>
+<footer>Área de revisão privada · Prado Vision. Não compartilhe imagens com informações pessoais. O descarte não apaga registros já existentes no Margo.</footer>
+</main><script defer src="/aprovacao-clientes.js"></script></body></html>
