@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {makeRoutes}=require('../src/approval-routes');
-const {createBatch}=require('../src/approval-core');
+const {makeRoutes}=require('../approval-routes');
+const {createBatch}=require('../approval-core');
 const source={format:'prado-vision-salonsoft-v1',files:{},collections:{
  clients:[
   {_sourceFile:'Clientes.xlsx',_row:3,Nome:'Ana Teste',Celular:'45999887766','Saldo na casa':'0'},
