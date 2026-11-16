@@ -15,7 +15,7 @@ COPY prado-migration/public/agenda-profissional.js /app/public/agenda-profission
 COPY prado-migration/public/aprovacao-clientes.html /app/public/aprovacao-clientes.html
 COPY prado-migration/public/aprovacao-clientes.css /app/public/aprovacao-clientes.css
 COPY prado-migration/public/aprovacao-clientes.js /app/public/aprovacao-clientes.js
-RUN node /app/prado-migration/install.js /app/server.js && node --check /app/server.js && node --check /app/public/agenda-profissional.js && node --check /app/prado-migration/src/approval-core.js && node --check /app/prado-migration/src/approval-routes.js && node --check /app/public/aprovacao-clientes.js && node --test /app/prado-migration/tests/safety.test.js /app/prado-migration/tests/smoke.test.js /app/prado-migration/tests/backup-restore.test.js /app/prado-migration/tests/approval.test.js
+RUN node /app/prado-migration/install.js /app/server.js && node --check /app/server.js && node --check /app/public/agenda-profissional.js && node --check /app/prado-migration/approval-core.js && node --check /app/prado-migration/approval-routes.js && node --check /app/public/aprovacao-clientes.js && node --test /app/prado-migration/tests/safety.test.js /app/prado-migration/tests/smoke.test.js /app/prado-migration/tests/backup-restore.test.js /app/prado-migration/tests/approval.test.js
 RUN chmod +x /app/docker-entrypoint.sh && chown -R node:node /app
 ENV NODE_ENV=production
 ENV MARGO_MODE=complete
