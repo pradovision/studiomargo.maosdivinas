@@ -96,3 +96,16 @@ test('cadastros auxiliares ficam inativos e nao criam clientes, nem saldos ou se
   assert.equal(again.alreadyApplied,true);
  }finally{f.cleanup()}
 });
+
+test('carga completa de 2478 contatos ficticios permanece 100% pendente, sem cadastro',()=>{
+ const {createBatch}=require('../approval-core');
+ const input={format:'prado-vision-salonsoft-v1',collections:{
+  clients:Array.from({length:2478},(_,i)=>({_sourceFile:'Clientes.xlsx',_row:i+3,Nome:'Pessoa ficticia '+(i+1),Celular:String(45900000000+i),'Saldo na casa':'0'})),
+  services:[],professionals:[],products:[],packages:[]}};
+ const start=Date.now(),batch=createBatch(input,[]);
+ assert.equal(batch.clients.length,2478);assert(batch.clients.every(x=>x.status==='pendente'));
+ assert.equal(batch.clients.filter(x=>x.targetId).length,0);
+ assert.equal(batch.sourceCounts.clients,2478);
+ assert.equal(batch.audit.length,0);
+ assert(Date.now()-start<12000,'Preparacao de 2478 registros demasiadamente lenta');
+});
