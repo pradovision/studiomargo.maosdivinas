@@ -24,11 +24,11 @@ test('smoke HTTP completo em dados sinteticos isolados',async t=>{
    const blocks=await req('/api/admin/blocks');assert.equal(blocks.status,200);assert(Array.isArray((await blocks.json()).blocks));
    const settings=await req('/api/admin/settings');assert.equal(settings.status,200);assert(Array.isArray((await settings.json()).services));
   });
-  await t.test('nova agenda e revisao sao carregadas',async()=>{assert.equal((await req('/agenda-profissional.html')).status,200);assert.equal((await req('/migracao.html')).status,200);});
+  await t.test('nova agenda e revisao sao carregadas',async()=>{assert.equal((await req('/agenda-profissional.html')).status,200);assert.equal((await req('/migracao.html')).status,200);assert.equal((await req('/aprovacao-clientes.html')).status,200);});
   await t.test('previa de migracao nao altera dados reais nem sinteticos',async()=>{
    const file=path.join(dir,'clients.json'),before=fs.readFileSync(file,'utf8');
-   const body={format:'prado-vision-salonsoft-v1',collections:{clients:[],services:[],professionals:[],products:[],packages:[]}};
-   const r=await req('/api/admin/migracao/previsualizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+   const body={format:'prado-vision-salonsoft-v1',collections:{clients:[{_sourceFile:'Clientes.xlsx',_row:3,Nome:'Cliente Ficticia',Celular:'45999990000','Saldo na casa':'0'}],services:[],professionals:[],products:[],packages:[]}};
+   const r=await req('/api/admin/migracao/v2/previsualizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
    assert.equal(r.status,200,JSON.stringify(await r.json()));assert.equal(fs.readFileSync(file,'utf8'),before);
   });
  }finally{app.kill('SIGTERM');await new Promise(resolve=>{if(app.exitCode!==null)return resolve();app.once('exit',resolve);setTimeout(resolve,1500).unref();});fs.rmSync(dir,{recursive:true,force:true});}
