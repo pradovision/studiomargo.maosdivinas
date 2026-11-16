@@ -30,6 +30,8 @@ test('smoke HTTP completo em dados sinteticos isolados',async t=>{
    const body={format:'prado-vision-salonsoft-v1',collections:{clients:[{_sourceFile:'Clientes.xlsx',_row:3,Nome:'Cliente Ficticia',Celular:'45999990000','Saldo na casa':'0'}],services:[],professionals:[],products:[],packages:[]}};
    const r=await req('/api/admin/migracao/v2/previsualizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
    assert.equal(r.status,200,JSON.stringify(await r.json()));assert.equal(fs.readFileSync(file,'utf8'),before);
+   const legacy=await req('/api/admin/migracao/aplicar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirmacao:'CONFIRMAR IMPORTACAO'})});
+   assert.equal(legacy.status,410,'Rota antiga nao pode importar clientes automaticamente');
   });
  }finally{app.kill('SIGTERM');await new Promise(resolve=>{if(app.exitCode!==null)return resolve();app.once('exit',resolve);setTimeout(resolve,1500).unref();});fs.rmSync(dir,{recursive:true,force:true});}
 });
