@@ -64,9 +64,10 @@ function makeRoutes(ctx){
   const decision=name.match(/^clientes\/([a-z0-9-]+)\/(aprovar|descartar|vincular|reabrir)$/);
   if(req.method==='POST'&&decision){
    try{
-    const b=load(file);if(!b)return sendJson(res,404,{error:'Prepare primeiro a lista de contatos do SalonSoft.'});
+    const body=await readJson(req);
+    const b=load(file);if(b?.archivedAt)return sendJson(res,409,{error:'Lote arquivado.'});if(!b)return sendJson(res,404,{error:'Prepare primeiro a lista de contatos do SalonSoft.'});
     const item=b.clients.find(c=>c.id===decision[1]);if(!item)return sendJson(res,404,{error:'Contato nao encontrado.'});
-    const action=decision[2],body=await readJson(req);
+    const action=decision[2];
     if(action==='reabrir'){
      if(item.status!=='descartado')return sendJson(res,409,{error:'Somente contatos descartados podem ser reabertos. Cadastros aprovados nao sao apagados aqui.'});
      item.status='pendente';item.reviewedAt='';item.reviewedBy='';item.decision='';item.targetId='';item.notes=clean(body.notes,1200);
@@ -111,24 +112,68 @@ function makeRoutes(ctx){
     }
    }catch(e){return sendJson(res,400,{error:e.message})}
   }
-  if(req.method==='POST'&&name==='aplicar-cadastros'){
+  if(name==='aplicar-cadastros')return sendJson(res,410,{error:'Confira cada cadastro individualmente.'});
+  const fields={services:['Nome','Preço','Duração'],products:['Nome','Preço','Categoria'],professionals:['Nome'],packages:[]};
+  function moduleRows(batch){
+   return Object.entries(fields).flatMap(([type,editable])=>(batch?.sourceModules?.[type]||[]).map((original,index)=>{
+    const id=type+'-'+index;
+    const decision=batch.moduleDecisions?.[id];
+    return {id,type,editable,original,status:decision?.status||(batch.otherModulesApplied?'legado':'pendente'),values:decision?.values};
+   }));
+  }
+  if(req.method==='GET'&&name==='cadastros'){
+   const b=load(file);
+   return sendJson(res,200,{items:moduleRows(b),archivedAt:b?.archivedAt||''});
+  }
+  const moduleDecision=name.match(/^cadastros\/(services|products|professionals|packages)-(\d+)\/(aprovar|descartar)$/);
+  if(req.method==='POST'&&(moduleDecision||name==='arquivar')){
    try{
-    const gate=checkBackup(DATA_DIR);if(gate)return sendJson(res,409,{error:gate});
-    const b=load(file);if(!b)return sendJson(res,404,{error:'Prepare a lista da migracao primeiro.'});
-    const body=await readJson(req);if(body.confirmacao!=='CONFIRMAR CADASTROS')return sendJson(res,400,{error:'Confirmacao obrigatoria.'});
-    if(b.otherModulesApplied)return sendJson(res,200,{ok:true,alreadyApplied:true,counts:b.moduleCounts});
-    const existing={clients:readClients(),settings:readSettings(),products:readProducts()};
-    const plan=prepare({format:'prado-vision-salonsoft-v1',files:{},collections:{clients:[],services:b.sourceModules.services||[],professionals:b.sourceModules.professionals||[],products:b.sourceModules.products||[],packages:b.sourceModules.packages||[]}},existing);
-    const snap=requireSnapshot(createBackupSnapshot,existing);
-    const nextSettings={...existing.settings,services:[...(existing.settings.services||[]),...plan.imported.services],professionals:[...(existing.settings.professionals||[]),...plan.imported.professionals]};
-    try{
-     if(plan.imported.services.length||plan.imported.professionals.length)writeSettings(nextSettings);
-     if(plan.imported.products.length)writeProducts([...existing.products,...plan.imported.products]);
-     b.otherModulesApplied=true;b.modulesAppliedAt=new Date().toISOString();b.moduleCounts=plan.importCounts;b.moduleIssues=plan.issues;
-     appendAudit(b,'cadastros-nao-clientes',null,actor,'Servicos ocultos, profissionais inativas e produtos inativos');save(file,b);
-    }catch(e){try{writeSettings(snap.settings);writeProducts(snap.products)}catch(err){console.error('[migracao] Falha ao restaurar configuracoes e produtos',err.message)}throw Error('Falha ao importar cadastros auxiliares. Backup preservado.')}
-    return sendJson(res,200,{ok:true,counts:plan.importCounts,issues:plan.issues.length,backupCreated:true});
-   }catch(e){return sendJson(res,400,{error:e.message})}
+    const body=await readJson(req);
+    const b=load(file);
+    if(!b||b.archivedAt)return sendJson(res,409,{error:'Não há lote aberto.'});
+    const rows=moduleRows(b);
+    if(name==='arquivar'){
+     if(b.clients.some(i=>i.status==='pendente')||rows.some(i=>i.status==='pendente'))return sendJson(res,409,{error:'Ainda existem itens pendentes.'});
+     b.archivedAt=new Date().toISOString();
+     appendAudit(b,'arquivado',null,actor,'Conferência encerrada');
+     save(file,b);
+     return sendJson(res,200,{ok:true});
+    }
+    const [,type,index,action]=moduleDecision;
+    const item=rows.find(i=>i.id===type+'-'+index);
+    if(!item||item.status!=='pendente')return sendJson(res,409,{error:'Item indisponível para decisão.'});
+    if(body.confirmacao!==action.toUpperCase())return sendJson(res,400,{error:'Confirmação individual obrigatória.'});
+    const values={};
+    let persistDestination;
+    let rollback;
+    let targetId='';
+    if(action==='aprovar'&&type!=='packages'){
+     const gate=checkBackup(DATA_DIR);
+     if(gate)return sendJson(res,409,{error:gate});
+     for(const field of item.editable){
+      values[field]=clean(body.values?.[field],field==='Categoria'?80:120);
+      if(!values[field]&&field!=='Categoria')return sendJson(res,400,{error:'Confira o campo '+field+'.'});
+     }
+     const original={_row:item.original._row??Number(index)+3,_sourceFile:item.original._sourceFile||type,...values};
+     const settings=readSettings(),products=readProducts(),existing={settings,products,clients:readClients()};
+     const plan=prepare({format:'prado-vision-salonsoft-v1',collections:{[type]:[original]}},existing);
+     const candidate=plan.imported[type][0];
+     if(!candidate)return sendJson(res,409,{error:'Cadastro existente ou valores inválidos. Confira os campos antes de decidir.'});
+     const current=type==='products'?products:(settings[type]||[]);
+     if(current.some(x=>x.id===candidate.id))return sendJson(res,409,{error:'Esta linha já possui um cadastro. Confira o destino.'});
+     requireSnapshot(createBackupSnapshot,existing);
+     targetId=candidate.id;
+     const write=list=>type==='products'?writeProducts(list):writeSettings({...settings,[type]:list});
+     persistDestination=()=>write([...current,candidate]);
+     rollback=()=>write(current);
+    }
+    b.moduleDecisions=b.moduleDecisions||{};
+    b.moduleDecisions[item.id]={status:action==='aprovar'?'aprovado':'descartado',values,targetId,at:new Date().toISOString(),actor};
+    appendAudit(b,action,item,actor,type);
+    if(persistDestination)persistDestination();
+    try{save(file,b)}catch(error){if(rollback)rollback();throw error}
+    return sendJson(res,200,{ok:true});
+   }catch(error){return sendJson(res,400,{error:error.message})}
   }
   if(req.method==='GET'&&name==='pendencias-cadastros'){
    const b=load(file);if(!b)return sendJson(res,200,{items:[],total:0});
@@ -139,3 +184,4 @@ function makeRoutes(ctx){
  };
 }
 module.exports={makeRoutes,FILENAME,checkBackup};
+

@@ -84,19 +84,23 @@ test('producao recusa aprovacao sem backup externo e aceita preparo sem tocar ca
   if(stamp===undefined)delete process.env.PRADO_MIGRATION_EXTERNAL_BACKUP_VERIFIED_AT;else process.env.PRADO_MIGRATION_EXTERNAL_BACKUP_VERIFIED_AT=stamp;
   f.cleanup();}
 });
-test('cadastros auxiliares ficam inativos e nao criam clientes, nem saldos ou sessoes',async()=>{
+test('apenas um cadastro revisado entra no destino e a rota em lote é bloqueada',async()=>{
  const f=createFixture();
  try{
   await cmd(f,'POST','preparar',source);
-  const r=await cmd(f,'POST','aplicar-cadastros',{confirmacao:'CONFIRMAR CADASTROS'});
-  assert.equal(r.status,200);assert.equal(r.counts.services,1);assert.equal(r.counts.clients,0);
-  assert.equal(f.settings().services.length,1);assert.equal(f.settings().services[0].bookable,false);
+  assert.equal((await cmd(f,'POST','aplicar-cadastros',{})).status,410);
+  assert.equal((await cmd(f,'POST','arquivar',{})).status,409);
+  const listing=await cmd(f,'GET','cadastros');
+  assert.equal(listing.items[0].status,'pendente');
+  const route='cadastros/services-0/aprovar';
+  const approval={confirmacao:'APROVAR',values:{Nome:'Corte revisado','Preço':'85','Duração':'45'}};
+  assert.equal((await cmd(f,'POST',route,approval)).status,200);
+  assert.equal(f.settings().services[0].price,85);
+  assert.equal(f.settings().services[0].name,'Corte revisado');
+  assert.equal((await cmd(f,'POST',route,approval)).status,409);
   assert.equal(f.clients().length,0);
-  const again=await cmd(f,'POST','aplicar-cadastros',{confirmacao:'CONFIRMAR CADASTROS'});
-  assert.equal(again.alreadyApplied,true);
  }finally{f.cleanup()}
 });
-
 test('carga completa de 2478 contatos ficticios permanece 100% pendente, sem cadastro',()=>{
  const {createBatch}=require('../approval-core');
  const input={format:'prado-vision-salonsoft-v1',collections:{
@@ -108,4 +112,33 @@ test('carga completa de 2478 contatos ficticios permanece 100% pendente, sem cad
  assert.equal(batch.sourceCounts.clients,2478);
  assert.equal(batch.audit.length,0);
  assert(Date.now()-start<12000,'Preparacao de 2478 registros demasiadamente lenta');
+});
+
+test('retoma decisões, encaminha produtos e profissionais, arquiva resumo sem sessões',async()=>{
+ const f=createFixture();
+ try{
+  const data=structuredClone(source);
+  data.collections.products=[{Nome:'Xampu',Categoria:'Cabelo','Preço':25,_row:3}];
+  data.collections.professionals=[{Nome:'Profissional de teste',_row:3}];
+  data.collections.packages=[{Quantidade:3,_row:3}];
+  await cmd(f,'POST','preparar',data);
+  for(const item of (await cmd(f,'GET','clientes')).clients)
+   await cmd(f,'POST','clientes/'+item.id+'/descartar',{confirmacao:'DESCARTAR'});
+  for(const item of (await cmd(f,'GET','cadastros')).items){
+   const action=item.type==='services'?'descartar':'aprovar';
+   const r=await cmd(f,'POST','cadastros/'+item.id+'/'+action,{confirmacao:action.toUpperCase(),values:item.original});
+   assert.equal(r.status,200);
+  }
+  assert.equal(f.ctx.readProducts()[0].name,'Xampu');
+  assert.equal(f.settings().professionals.length,1);
+  assert.equal(f.settings().services.length,0);
+  assert.equal(f.stats().writes,2);
+  assert.equal((await cmd(f,'POST','arquivar',{})).status,200);
+  const refreshed=makeRoutes(f.ctx);
+  const result=await refreshed({method:'GET'},{},url('cadastros'));
+  assert.ok(result.archivedAt);
+  assert.ok(result.items.every(i=>i.status!=='pendente'));
+  const client=(await cmd(f,'GET','clientes?status=todos')).clients[0];
+  assert.equal((await cmd(f,'POST','clientes/'+client.id+'/reabrir',{})).status,409);
+ }finally{f.cleanup()}
 });
